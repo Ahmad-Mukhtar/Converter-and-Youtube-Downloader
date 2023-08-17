@@ -1,0 +1,5 @@
+moviepy~=1.0.3
+bson~=0.5.10
+pymongo~=4.4.1
+Flask~=2.3.2
+pytube~=15.0.0
