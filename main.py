@@ -7,16 +7,13 @@ from flask_cors import CORS
 from flask_pymongo import PyMongo
 
 from convert import to_mp3
-from storage import util
 from yotube_downlaod import youtubedownlaoder
 
 server = Flask(__name__)
 CORS(server)
-mongo_video = PyMongo(server, uri="mongodb://localhost:27017/videos")
-mongo_mp3 = PyMongo(server, uri="mongodb://localhost:27017/mp3s")
-mongo_youtube = PyMongo(server, uri="mongodb://localhost:27017/youtube")
+mongo_mp3 = PyMongo(server, uri="mongodb+srv://Blank:fck7ziJGosxnhIJ3@cluster0.1fd4opf.mongodb.net/mp3s")
+mongo_youtube = PyMongo(server, uri="mongodb+srv://Blank:fck7ziJGosxnhIJ3@cluster0.1fd4opf.mongodb.net/youtube")
 
-fs_videos = gridfs.GridFS(mongo_video.db)
 fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 mongo_youtube_db = mongo_youtube.db
 
@@ -26,14 +23,27 @@ def index():
     return "Hello"
 
 
+@server.route("/getResolutions", methods=["GET"])
+def get_Resolutions():
+    url = request.args.get("uid")
+    resolutions, res = youtubedownlaoder.getResolutions(url)
+    if res == 200:
+        print(resolutions)
+        return resolutions,res
+    else:
+        print(res)
+        return "internal server error", 500
+
+
 @server.route("/youtubedownload", methods=["GET"])
 def download_youtube_video():
     url = request.args.get("uid")
+    res=request.args.get("res")
+    print(res)
     delete_previous_files()
-    name, res = youtubedownlaoder.DownloadVideo(url)
+    name, res = youtubedownlaoder.DownloadVideo(url,res)
     if res == 200:
         f = open(name, "rb")
-        print(name)
         mongo_youtube_db.filenames.insert_one({'filename': name})
         return send_file(f, download_name=f'{name}')
     else:
@@ -46,14 +56,12 @@ def upload():
     global id
     if len(request.files) > 1 or len(request.files) < 1:
         return "exactly one file required", 400
-    for _, f in request.files.items():
-        id, res = util.upload(f, fs_videos)
-        if res == 500:
-            return id, res
+    file_items = list(request.files.items()).pop()
+    file_name = file_items[0]
+    f = file_items[1]
     delete_mp3s_files()
-    mp3_id, res = to_mp3.start(str(id), fs_videos, fs_mp3s)
+    mp3_id, res = to_mp3.start(file_name, f, fs_mp3s)
     if res == 200:
-        fs_videos.delete(ObjectId(str(id)))
         return mp3_id, res
     return "conversion error", 500
 
@@ -85,4 +93,4 @@ def delete_mp3s_files():
 
 
 if __name__ == '__main__':
-    server.run(host="0.0.0.0", port=8080)
+    server.run(debug=False, threaded=True, host="0.0.0.0", port=8080)
