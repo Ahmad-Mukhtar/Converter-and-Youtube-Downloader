@@ -93,4 +93,4 @@ def delete_mp3s_files():
 
 
 if __name__ == '__main__':
-    server.run(debug=False, threaded=True, host="0.0.0.0", port=8080)
+    server.run(debug=False, threaded=True, host="0.0.0.0", port=5000)
