@@ -5,14 +5,15 @@ from flask import Flask, request, send_file
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 import gridfs
-
+from dotenv import load_dotenv
 from convert import to_mp3
 from yotube_downlaod import youtubedownlaoder
 
 server = Flask(__name__)
 CORS(server)
-mongo_mp3 = PyMongo(server, uri="mongodb+srv://Blank:fck7ziJGosxnhIJ3@cluster0.1fd4opf.mongodb.net/mp3s")
-mongo_youtube = PyMongo(server, uri="mongodb+srv://Blank:fck7ziJGosxnhIJ3@cluster0.1fd4opf.mongodb.net/youtube")
+load_dotenv(".env")
+mongo_mp3 = PyMongo(server, uri=os.getenv('MP3_URL'))
+mongo_youtube = PyMongo(server, uri=os.getenv('YOUTUBE_URL'))
 
 fs_mp3s = gridfs.GridFS(mongo_mp3.db)
 mongo_youtube_db = mongo_youtube.db
